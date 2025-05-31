@@ -1,23 +1,31 @@
 pipeline {
     agent any
+
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials-id')
+        IMAGE_NAME = "mugil1911/react-app"
+        IMAGE_TAG = "dev"
     }
+
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
+
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t mugil1911/react-app:dev .'
+                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
             }
         }
-        stage('Push Docker Image') {
+
+        stage('Docker Login and Push') {
             steps {
-                withDockerRegistry(credentialsId: 'dockerhub-credentials-id', url: '') {
-                    sh 'docker push mugil1911/react-app:dev'
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    sh '''
+                        echo $PASSWORD | docker login -u $USERNAME --password-stdin
+                        docker push ${IMAGE_NAME}:${IMAGE_TAG}
+                    '''
                 }
             }
         }

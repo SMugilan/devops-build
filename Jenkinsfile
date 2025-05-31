@@ -15,14 +15,20 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Set tag based on branch
-                    if (env.BRANCH_NAME == 'dev') {
-                        env.IMAGE_TAG = "dev"
-                    } else if (env.BRANCH_NAME == 'master') {
-                        env.IMAGE_TAG = "prod"
+                    // Use BRANCH_NAME or default to 'dev' if null/empty
+                    def branch = env.BRANCH_NAME ?: 'dev'
+                    def imageTag
+
+                    if (branch == 'dev') {
+                        imageTag = "dev"
+                    } else if (branch == 'master') {
+                        imageTag = "prod"
                     } else {
-                        error("Branch ${env.BRANCH_NAME} not supported")
+                        error("Branch ${branch} not supported")
                     }
+                    env.IMAGE_TAG = imageTag  // set IMAGE_TAG for later stages
+                    
+                    echo "Building Docker image with tag: ${imageTag}"
                 }
                 sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
             }

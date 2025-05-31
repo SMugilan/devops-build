@@ -1,11 +1,8 @@
 pipeline {
     agent any
-
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
-        DOCKER_IMAGE_NAME = "mugil1911/react-app"
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials-id')
     }
-
     stages {
         stage('Checkout') {
             steps {
@@ -14,21 +11,13 @@ pipeline {
         }
         stage('Build Docker Image') {
             steps {
-                script {
-                    def branchName = env.GIT_BRANCH?.replaceAll('origin/', '') ?: 'dev'
-                    def imageTag = branchName == 'master' ? 'prod' : 'dev'
-                    docker.build("${DOCKER_IMAGE_NAME}:${imageTag}")
-                }
+                sh 'docker build -t mugil1911/react-app:dev .'
             }
         }
         stage('Push Docker Image') {
             steps {
-                script {
-                    def branchName = env.GIT_BRANCH?.replaceAll('origin/', '') ?: 'dev'
-                    def imageTag = branchName == 'master' ? 'prod' : 'dev'
-                    docker.withRegistry('', DOCKERHUB_CREDENTIALS) {
-                        docker.image("${DOCKER_IMAGE_NAME}:${imageTag}").push()
-                    }
+                withDockerRegistry(credentialsId: 'dockerhub-credentials-id', url: '') {
+                    sh 'docker push mugil1911/react-app:dev'
                 }
             }
         }
